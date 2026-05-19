@@ -1,9 +1,11 @@
 //! Integration tests for fh_language_combo_tool_lib.
 //!
 //! Groups 1-3 are **read-only** and rely on a real Steam installation with
-//! both FH5 and FH6 present on this PC. Group 4 (apply + restore cycle)
-//! operates entirely inside a temp directory so that no real game files are
-//! ever modified. Group 5 covers error cases with synthetic / nonexistent paths.
+//! both FH5 and FH6 present on this PC — marked `#[ignore]` so they don't
+//! run in CI. Run them locally with `cargo test -- --ignored`.
+//! Group 4 (apply + restore cycle) operates entirely inside a temp directory
+//! so that no real game files are ever modified. Group 5 covers error cases
+//! with synthetic / nonexistent paths.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -28,6 +30,7 @@ const FH6_RESOURCE: &str =
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[test]
+#[ignore]
 fn test_detect_finds_fh5_and_fh6() {
     let games = game_detector::detect_steam_games();
 
@@ -66,6 +69,7 @@ fn test_detect_finds_fh5_and_fh6() {
 }
 
 #[test]
+#[ignore]
 fn test_validate_fh5_real_directory() {
     let profile =
         game_detector::validate_game_directory(Path::new(FH5_ROOT), GameId::Fh5)
@@ -81,6 +85,7 @@ fn test_validate_fh5_real_directory() {
 }
 
 #[test]
+#[ignore]
 fn test_validate_fh6_real_directory() {
     let profile =
         game_detector::validate_game_directory(Path::new(FH6_ROOT), GameId::Fh6)
@@ -101,6 +106,7 @@ fn test_validate_fh6_real_directory() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[test]
+#[ignore]
 fn test_scan_fh5_string_tables() {
     let packs = resource_scanner::scan_string_tables(Path::new(FH5_RESOURCE))
         .expect("scan_string_tables should succeed for real FH5 StringTables");
@@ -164,6 +170,7 @@ fn test_scan_fh5_string_tables() {
 }
 
 #[test]
+#[ignore]
 fn test_scan_fh6_string_tables() {
     let packs = resource_scanner::scan_string_tables(Path::new(FH6_RESOURCE))
         .expect("scan_string_tables should succeed for real FH6 StringTables");
@@ -193,6 +200,7 @@ fn test_scan_fh6_string_tables() {
 }
 
 #[test]
+#[ignore]
 fn test_fh5_filename_case_preservation() {
     let fh5_res = Path::new(FH5_RESOURCE);
 
@@ -214,6 +222,7 @@ fn test_fh5_filename_case_preservation() {
 }
 
 #[test]
+#[ignore]
 fn test_fh6_filename_case_all_uppercase() {
     let fh6_res = Path::new(FH6_RESOURCE);
 
@@ -235,6 +244,7 @@ fn test_fh6_filename_case_all_uppercase() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[test]
+#[ignore]
 fn test_generate_plan_jp_voice_chs_text_fh5() {
     let fh5_res = Path::new(FH5_RESOURCE);
     let backup_root = std::env::temp_dir().join("fh_integ_plan_test");

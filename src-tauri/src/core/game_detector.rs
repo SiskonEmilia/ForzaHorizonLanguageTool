@@ -142,8 +142,7 @@ pub fn validate_game_directory(path: &Path, game_id: GameId) -> Result<GameProfi
 
 fn reject_dangerous_path(path: &Path) -> Result<(), String> {
     let canonical = std::fs::canonicalize(path)
-        .or_else(|_| Ok::<PathBuf, String>(path.to_path_buf()))
-        .unwrap();
+        .map_err(|_| format!("Path does not exist or is inaccessible: {}", path.display()))?;
 
     // Reject disk roots (e.g. C:\, D:\)
     if canonical.parent().is_none() {

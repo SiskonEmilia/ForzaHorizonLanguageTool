@@ -78,6 +78,27 @@ pub fn execute_restore(backup_path: &Path) -> RestoreResult {
         };
     }
 
+    match resource_scanner::compute_sha256(&temp_path) {
+        Ok(h) if h == file_entry.original_sha256 => {}
+        Ok(h) => {
+            let _ = fs::remove_file(&temp_path);
+            return RestoreResult {
+                success: false,
+                message: format!(
+                    "Temp file integrity check failed: expected {}, got {}",
+                    file_entry.original_sha256, h
+                ),
+            };
+        }
+        Err(e) => {
+            let _ = fs::remove_file(&temp_path);
+            return RestoreResult {
+                success: false,
+                message: format!("Failed to verify temp file: {}", e),
+            };
+        }
+    }
+
     if let Err(e) = fs::rename(&temp_path, &target_path) {
         let _ = fs::remove_file(&temp_path);
         return RestoreResult {

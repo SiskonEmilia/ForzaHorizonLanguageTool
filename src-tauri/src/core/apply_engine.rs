@@ -109,12 +109,11 @@ pub fn execute_apply(plan: &ApplyPlan, profile: &GameProfile) -> ApplyResult {
     let temp_path = target_path.with_extension("tmp");
 
     if let Err(e) = fs::copy(source_path, &temp_path) {
-        let _ = rollback_from_backup(&backup_path, target_path);
         return ApplyResult {
             success: false,
             message: format!("Failed to copy source to temp file: {}", e),
             backup_path: Some(backup_path_str),
-            rolled_back: rollback_from_backup_check(&backup_path, target_path),
+            rolled_back: false,
         };
     }
 

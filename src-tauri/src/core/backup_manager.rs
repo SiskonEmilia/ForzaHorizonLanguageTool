@@ -37,15 +37,7 @@ pub struct BackupInfo {
     pub valid: bool,
 }
 
-fn compute_sha256(path: &Path) -> Result<String, String> {
-    use sha2::{Digest, Sha256};
-
-    let data = fs::read(path).map_err(|e| format!("Failed to read file for hashing: {}", e))?;
-    let mut hasher = Sha256::new();
-    hasher.update(&data);
-    let result = hasher.finalize();
-    Ok(format!("{:x}", result))
-}
+use super::resource_scanner;
 
 pub fn get_backup_dir() -> Result<PathBuf, String> {
     let local_app_data =
@@ -116,11 +108,11 @@ pub fn create_backup_to(
         .ok_or_else(|| cleanup("Target file has no filename".to_string()))?;
     let dest = original_dir.join(file_name);
 
-    let source_hash = compute_sha256(target_file).map_err(|e| cleanup(e))?;
+    let source_hash = resource_scanner::compute_sha256(target_file).map_err(|e| cleanup(e))?;
 
     fs::copy(target_file, &dest).map_err(|e| cleanup(format!("Failed to copy file: {}", e)))?;
 
-    let dest_hash = compute_sha256(&dest).map_err(|e| cleanup(e))?;
+    let dest_hash = resource_scanner::compute_sha256(&dest).map_err(|e| cleanup(e))?;
     if source_hash != dest_hash {
         return Err(cleanup(format!(
             "SHA-256 mismatch after copy: source={}, dest={}",
@@ -136,7 +128,7 @@ pub fn create_backup_to(
         resource_directory: resource_dir.to_string_lossy().to_string(),
         voice_language: voice_lang.to_string(),
         text_language: text_lang.to_string(),
-        target_file: target_file.to_string_lossy().to_string(),
+        target_file: file_name.to_string_lossy().to_string(),
         source_file: source_file.to_string(),
         created_at: now.to_rfc3339(),
         files: vec![BackupFileEntry {

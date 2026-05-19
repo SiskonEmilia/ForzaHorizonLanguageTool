@@ -1,5 +1,4 @@
 {
-  "$schema": "https://raw.githubusercontent.com/nicedoc/tauri/refs/heads/main/crates/tauri-utils/schema.json",
   "productName": "FH Language Combo Tool",
   "version": "1.0.0",
   "identifier": "com.fhlanguagecombotool.app",

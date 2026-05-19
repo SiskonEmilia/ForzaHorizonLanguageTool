@@ -47,7 +47,7 @@ The tool only touches `.zip` files inside `StringTables`. It does not modify exe
 
 ### Prerequisites
 
-- [Rust](https://rustup.rs/) 1.75+
+- [Rust](https://rustup.rs/) 1.85+ (edition 2024)
 - [Tauri CLI](https://v2.tauri.app/start/prerequisites/) (`cargo install tauri-cli --version "^2"`)
 - Windows with MSVC build tools
 
