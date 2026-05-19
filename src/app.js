@@ -31,12 +31,10 @@
 
   // ── Status Labels ──────────────────────────────────────────────
 
-  const STATUS_LABELS = {
-    applied: '已应用',
-    reverted: '已还原',
-    modified: '已修改',
-    none: '未配置'
-  };
+  function getStatusLabel(state) {
+    var key = 'main.status_' + state;
+    return I18N.t(key);
+  }
 
   const STATUS_BADGE_CLASS = {
     applied: 'badge-success',
@@ -51,6 +49,7 @@
   const $$ = (sel) => document.querySelectorAll(sel);
 
   // Pages
+  const pageLangSelect = $('#page-lang-select');
   const pageDisclaimer = $('#page-disclaimer');
   const pageMain = $('#page-main');
   const pageConfirm = $('#page-confirm');
@@ -170,7 +169,7 @@
   // ── Game Detection ─────────────────────────────────────────────
 
   async function detectGames() {
-    gameEmpty.innerHTML = '<div class="spinner"></div><span>正在检测已安装的游戏...</span>';
+    gameEmpty.innerHTML = '<div class="spinner"></div><span>' + I18N.t('main.detecting') + '</span>';
     gameEmpty.style.display = '';
 
     try {
@@ -257,7 +256,7 @@
       currentStatus = null;
       statusBadge.style.display = 'none';
       currentStatusBar.style.display = 'none';
-      showInlineError('扫描语言包失败：' + extractErrorMessage(err));
+      showInlineError(I18N.t('main.scan_error') + extractErrorMessage(err));
     }
   }
 
@@ -338,10 +337,8 @@
     const textName = textPack ? textPack.displayName : text;
 
     effectPreview.style.display = '';
-    effectDesc.textContent = '游戏将使用 ' + voiceName + ' 语音 + ' + textName + ' 文字';
-    effectDetail.textContent =
-      '操作：将 ' + text + '.zip（文字）复制覆盖到 ' + voice + '.zip（语音），' +
-      '原始 ' + voice + '.zip 将被自动备份。';
+    effectDesc.textContent = I18N.t('main.effect_desc', {voice: voiceName, text: textName});
+    effectDetail.textContent = I18N.t('main.effect_detail', {voice: voice, text: text});
 
     btnApply.disabled = false;
   }
@@ -356,7 +353,7 @@
     }
 
     const state = currentStatus.state;
-    const label = STATUS_LABELS[state] || state;
+    const label = getStatusLabel(state);
     const badgeClass = STATUS_BADGE_CLASS[state] || 'badge-muted';
 
     statusBadge.textContent = label;
@@ -369,11 +366,10 @@
       const textPack = languagePacks.find((p) => p.code.toUpperCase() === currentStatus.textLanguage.toUpperCase());
       const voiceName = voicePack ? voicePack.displayName : currentStatus.voiceLanguage;
       const textName = textPack ? textPack.displayName : currentStatus.textLanguage;
-      statusText.textContent =
-        label + ' — 语音：' + voiceName + '，文字：' + textName;
-      if (currentStatus.lastApplied) {
-        statusText.textContent += '（' + formatDateTime(currentStatus.lastApplied) + '）';
-      }
+      statusText.textContent = I18N.t('main.status_detail', {
+        voice: voiceName, text: textName,
+        time: currentStatus.lastApplied ? formatDateTime(currentStatus.lastApplied) : ''
+      });
     } else {
       currentStatusBar.style.display = 'none';
     }
@@ -384,20 +380,20 @@
   async function startApplyFlow() {
     if (!selectedGame || !selectVoice.value || !selectText.value) return;
 
-    showLoading('检查游戏运行状态...');
+    showLoading(I18N.t('confirm.checking'));
 
     try {
       const running = await invoke('check_game_running', { gameId: selectedGame.gameId });
       hideLoading();
 
       if (running) {
-        alert('游戏正在运行中，请先关闭游戏后再进行操作。');
+        alert(I18N.t('game.running'));
         return;
       }
     } catch (err) {
       hideLoading();
       // If check fails, warn but allow to proceed
-      if (!confirm('无法检测游戏运行状态（' + extractErrorMessage(err) + '）。\n是否仍然继续？')) {
+      if (!confirm(I18N.t('game.running_warn', {err: extractErrorMessage(err)}))) {
         return;
       }
     }
@@ -420,12 +416,11 @@
     confirmGame.textContent = selectedGame.displayName;
     confirmVoice.textContent = currentPlan.voiceDisplayName + ' (' + currentPlan.voiceLang + ')';
     confirmText.textContent = currentPlan.textDisplayName + ' (' + currentPlan.textLang + ')';
-    let desc = '将 ' + currentPlan.textLang + '.zip（文字语言包）复制覆盖到 ' +
-      currentPlan.voiceLang + '.zip（语音语言包）。';
+    let desc = I18N.t('confirm.desc', {voice: currentPlan.voiceLang, text: currentPlan.textLang});
     if (currentPlan.manifestPath) {
-      desc += '\n同时自动设置 Steam 游戏启动语言为 ' + currentPlan.voiceDisplayName + '，无需手动切换。';
+      desc += I18N.t('confirm.desc_auto', {voice: currentPlan.voiceDisplayName});
     } else {
-      desc += '\n请手动在 Steam 游戏属性中将语言设置为 ' + currentPlan.voiceDisplayName + '。';
+      desc += I18N.t('confirm.desc_manual', {voice: currentPlan.voiceDisplayName});
     }
     confirmDesc.textContent = desc;
 
@@ -439,7 +434,7 @@
   async function executeApply() {
     if (!currentPlan) return;
 
-    showLoading('正在应用配置...');
+    showLoading(I18N.t('confirm.applying'));
 
     try {
       const result = await invoke('apply_config', {
@@ -453,10 +448,9 @@
       hideLoading();
 
       if (result.success) {
-        let msg = '已成功将 ' + currentPlan.textDisplayName + ' 文字应用到 ' +
-          currentPlan.voiceDisplayName + ' 语音包。';
+        let msg = I18N.t('result.success_msg', {voice: currentPlan.voiceDisplayName, text: currentPlan.textDisplayName});
         if (result.steamLanguageSet) {
-          msg += '\nSteam 启动语言已自动设置为 ' + currentPlan.voiceDisplayName + '。';
+          msg += I18N.t('result.steam_set', {voice: currentPlan.voiceDisplayName});
         }
         if (result.steamLanguageWarning) {
           msg += '\n' + result.steamLanguageWarning;
@@ -465,19 +459,19 @@
 
         let detail = '';
         if (result.backupPath) {
-          detail += '备份路径：' + result.backupPath;
+          detail += I18N.t('result.backup_path') + result.backupPath;
         }
         resultSuccessDetail.textContent = detail;
 
         showPage(pageResultSuccess);
       } else {
-        resultErrorMsg.textContent = result.message || '应用配置时发生未知错误。';
+        resultErrorMsg.textContent = result.message || I18N.t('error.unknown');
         let detail = '';
         if (result.rolledBack) {
-          detail += '已自动回滚到原始状态。\n';
+          detail += I18N.t('result.error_rolled_back');
         }
         if (result.backupPath) {
-          detail += '备份路径：' + result.backupPath;
+          detail += I18N.t('result.backup_path') + result.backupPath;
         }
         resultErrorDetail.textContent = detail;
 
@@ -535,8 +529,8 @@
       item.innerHTML =
         '<div class="backup-info">' +
           '<div class="backup-time">' + escapeHtml(formatDateTime(backup.createdAt)) + '</div>' +
-          '<div class="backup-langs">语音：' + escapeHtml(voiceName) +
-            ' · 文字：' + escapeHtml(textName) + '</div>' +
+          '<div class="backup-langs">' + escapeHtml(I18N.t('restore.voice_label')) + ': ' + escapeHtml(voiceName) +
+            ' · ' + escapeHtml(I18N.t('restore.text_label')) + ': ' + escapeHtml(textName) + '</div>' +
         '</div>' +
         '<div class="backup-badge">' +
           (backup.valid
@@ -783,15 +777,95 @@
 
   // ── Init ───────────────────────────────────────────────────────
 
+  function applyI18n() {
+    var t = I18N.t.bind(I18N);
+    // Disclaimer
+    var dt = $('#page-disclaimer .disclaimer-title');
+    if (dt) dt.textContent = t('disclaimer.title');
+    var ds = $('#page-disclaimer .text-secondary');
+    if (ds) ds.textContent = t('disclaimer.subtitle');
+    var dn = $('#page-disclaimer .disclaimer-notice span');
+    if (dn) dn.textContent = t('disclaimer.notice');
+    $$('.disclaimer-check').forEach(function(cb, i) {
+      var span = cb.closest('.checkbox-item').querySelector('span:last-child');
+      if (span) span.innerHTML = t('disclaimer.check' + (i + 1));
+    });
+    if (btnAcceptDisclaimer) btnAcceptDisclaimer.textContent = t('disclaimer.accept');
+    // Main page
+    var gt = $('#page-main .card-title');
+    if (gt) gt.textContent = t('main.select_game');
+    if (btnToggleManual) btnToggleManual.textContent = t('main.manual_add');
+    var vl = $('#page-main .lang-label');
+    if (vl) vl.textContent = t('main.voice_label');
+    var vh = $('#page-main .lang-hint');
+    if (vh) vh.textContent = t('main.voice_hint');
+    var tl = $$('#page-main .lang-label')[1];
+    if (tl) tl.textContent = t('main.text_label');
+    var th = $$('#page-main .lang-hint')[1];
+    if (th) th.textContent = t('main.text_hint');
+    var al = $('.lang-arrow-label');
+    if (al) al.textContent = t('main.arrow_label');
+    var lc = $$('#page-main .card-title')[1];
+    if (lc) lc.textContent = t('main.lang_config');
+    var ba = btnApply; if (ba) ba.lastChild.textContent = ' ' + t('main.btn_apply');
+    var br = btnRestore; if (br) br.lastChild.textContent = ' ' + t('main.btn_restore');
+    var ft = $('.app-footer');
+    if (ft) ft.textContent = t('main.footer');
+    // Confirm page
+    var ct = $('#page-confirm .card-title');
+    if (ct) ct.textContent = t('confirm.title');
+    var cp = $('.plan-header');
+    if (cp) cp.textContent = t('confirm.plan');
+    $$('.plan-label').forEach(function(el, i) {
+      var keys = ['confirm.game', 'confirm.voice', 'confirm.text'];
+      if (keys[i]) el.textContent = t(keys[i]);
+    });
+    $$('.confirm-check').forEach(function(cb, i) {
+      var span = cb.closest('.checkbox-item').querySelector('span:last-child');
+      var keys = ['confirm.check1', 'confirm.check2'];
+      if (span && keys[i]) span.textContent = t(keys[i]);
+    });
+    if (btnConfirmBack) btnConfirmBack.textContent = t('confirm.btn_back');
+    if (btnConfirmApply) btnConfirmApply.textContent = t('confirm.btn_apply');
+    // Restore page
+    var rh = $('#page-restore .card-title');
+    if (rh) rh.textContent = t('restore.title');
+    if (btnRestoreBack) btnRestoreBack.textContent = t('restore.btn_back');
+    if (btnRestoreConfirm) btnRestoreConfirm.textContent = t('restore.btn_confirm');
+  }
+
+  function initLangSelector() {
+    var grid = $('#lang-grid');
+    I18N.LANGUAGES.forEach(function(lang) {
+      var btn = document.createElement('button');
+      btn.className = 'lang-select-btn';
+      btn.textContent = lang.name;
+      btn.addEventListener('click', function() {
+        I18N.setLang(lang.code);
+        applyI18n();
+        showPage(pageDisclaimer);
+      });
+      grid.appendChild(btn);
+    });
+  }
+
   function init() {
     bindEvents();
+    initLangSelector();
 
-    // Check if disclaimer was already accepted
-    if (localStorage.getItem('fhlct_disclaimer_accepted') === '1') {
+    var savedLang = localStorage.getItem('fhlct_ui_language');
+    if (savedLang) {
+      I18N.setLang(savedLang);
+      applyI18n();
+    }
+
+    if (localStorage.getItem('fhlct_disclaimer_accepted') === '1' && savedLang) {
       showPage(pageMain);
       detectGames();
-    } else {
+    } else if (savedLang) {
       showPage(pageDisclaimer);
+    } else {
+      showPage(pageLangSelect);
     }
   }
 

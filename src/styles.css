@@ -116,6 +116,35 @@ body {
   overflow: hidden;
 }
 
+/* ── Language Selector Grid ────────────────────────────────────── */
+
+.lang-select-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.lang-select-btn {
+  padding: 8px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.lang-select-btn:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+  background: var(--accent-dim);
+}
+
 /* ── Pages ──────────────────────────────────────────────────────── */
 
 .page {

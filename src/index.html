@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FH Language Combo Tool</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="i18n.js"></script>
 </head>
 <body>
   <!-- ====== Custom Titlebar ====== -->
@@ -27,6 +28,19 @@
   </div>
 
   <div id="app">
+
+    <!-- ====== Language Selector Page ====== -->
+    <div id="page-lang-select" class="page">
+      <div class="page-inner" style="display:flex; align-items:center; justify-content:center; min-height:100%;">
+        <div class="card" style="max-width:420px; width:100%;">
+          <div class="card-header">
+            <img src="logo.png" class="disclaimer-logo" alt="">
+            <h1 id="lang-select-title">Select Language / 选择语言</h1>
+          </div>
+          <div id="lang-grid" class="lang-select-grid"></div>
+        </div>
+      </div>
+    </div>
 
     <!-- ====== Disclaimer Page ====== -->
     <div id="page-disclaimer" class="page active">
