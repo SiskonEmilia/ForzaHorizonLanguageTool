@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version "^2"
+
+      - name: Build
+        run: cargo tauri build
+        working-directory: .
+
+      - name: Prepare artifacts
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Path "src-tauri\target\release" -Filter "*.exe" | Where-Object { $_.Name -notlike "*.pdb" -and $_.Name -eq "fh-language-combo-tool.exe" }
+          Copy-Item $exe.FullName "FH-Language-Combo-Tool-Portable.exe"
+          $nsis = Get-ChildItem -Path "src-tauri\target\release\bundle\nsis" -Filter "*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($nsis) { Copy-Item $nsis.FullName "FH-Language-Combo-Tool-Setup.exe" }
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            FH-Language-Combo-Tool-Portable.exe
+            FH-Language-Combo-Tool-Setup.exe
+          generate_release_notes: true
