@@ -810,6 +810,10 @@
     if (lc) lc.textContent = t('main.lang_config');
     var ba = btnApply; if (ba) ba.lastChild.textContent = ' ' + t('main.btn_apply');
     var br = btnRestore; if (br) br.lastChild.textContent = ' ' + t('main.btn_restore');
+    var et = $('#effect-title');
+    if (et) et.textContent = t('main.effect_title');
+    var sl = $('#status-label');
+    if (sl) sl.textContent = t('main.status_label');
     var ft = $('.app-footer');
     if (ft) ft.textContent = t('main.footer');
     // Confirm page
