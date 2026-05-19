@@ -101,6 +101,13 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
         super::steam_language::read_manifest_language(Path::new(mp))
     });
 
+    let game_id_enum = match plan.game_id.as_str() {
+        "fh5" => Some(super::game_detector::GameId::Fh5),
+        "fh6" => Some(super::game_detector::GameId::Fh6),
+        _ => None,
+    };
+    let original_user_preferred_lang = game_id_enum.and_then(super::steam_language::read_user_preferred_lang);
+
     let backup_path = match backup_manager::create_backup_to(
         backup_root,
         &plan.game_id,
@@ -113,6 +120,7 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
         &plan.source_file,
         plan.manifest_path.as_deref().map(Path::new),
         original_steam_language.as_deref(),
+        original_user_preferred_lang.as_deref(),
     ) {
         Ok(path) => path,
         Err(e) => {
@@ -246,6 +254,16 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
                         &format!("Failed to set Steam language: {}", e));
                 }
             }
+        }
+    }
+
+    if let Some(gid) = game_id_enum {
+        if let Err(e) = super::steam_language::set_user_preferred_lang(gid, &plan.voice_language) {
+            let _ = logger::log_operation(&plan.game_id, "warn",
+                &format!("Failed to set UserPreferredLang: {}", e));
+        } else {
+            let _ = logger::log_operation(&plan.game_id, "info",
+                &format!("Set UserPreferredLang to '{}'", plan.voice_language));
         }
     }
 

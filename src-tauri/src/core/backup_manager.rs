@@ -20,6 +20,8 @@ pub struct BackupManifest {
     pub manifest_path: Option<String>,
     #[serde(default)]
     pub original_steam_language: Option<String>,
+    #[serde(default)]
+    pub original_user_preferred_lang: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -66,6 +68,7 @@ pub fn create_backup_to(
     source_file: &str,
     acf_manifest_path: Option<&Path>,
     original_steam_language: Option<&str>,
+    original_user_preferred_lang: Option<&str>,
 ) -> Result<PathBuf, String> {
     let now = chrono::Local::now();
     let dir_name = format!(
@@ -119,6 +122,7 @@ pub fn create_backup_to(
         }],
         manifest_path: acf_manifest_path.map(|p| p.to_string_lossy().to_string()),
         original_steam_language: original_steam_language.map(|s| s.to_string()),
+        original_user_preferred_lang: original_user_preferred_lang.map(|s| s.to_string()),
     };
 
     let manifest_json = serde_json::to_string_pretty(&manifest)
@@ -249,6 +253,7 @@ mod tests {
             "StringTable_ja-JP.txt",
             None,
             None,
+            None,
         );
 
         let backup_dir = result.expect("create_backup_to should succeed");
@@ -307,6 +312,7 @@ mod tests {
             }],
             manifest_path: None,
             original_steam_language: None,
+            original_user_preferred_lang: None,
         };
 
         let json = serde_json::to_string_pretty(&manifest).unwrap();

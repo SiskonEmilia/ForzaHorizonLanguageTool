@@ -91,6 +91,35 @@ fn extract_quoted_value(line: &str) -> Option<String> {
     None
 }
 
+use std::path::PathBuf;
+
+use super::game_detector::GameId;
+
+pub fn get_user_preferred_lang_path(game_id: GameId) -> Option<PathBuf> {
+    let local = dirs::data_local_dir()?;
+    let dir_name = match game_id {
+        GameId::Fh5 => "ForzaHorizon5",
+        GameId::Fh6 => "ForzaHorizon6",
+    };
+    Some(local.join(dir_name).join("UserPreferredLang"))
+}
+
+pub fn read_user_preferred_lang(game_id: GameId) -> Option<String> {
+    let path = get_user_preferred_lang_path(game_id)?;
+    fs::read_to_string(&path).ok().map(|s| s.trim().to_string())
+}
+
+pub fn set_user_preferred_lang(game_id: GameId, lang_code: &str) -> Result<Option<String>, String> {
+    let path = match get_user_preferred_lang_path(game_id) {
+        Some(p) => p,
+        None => return Ok(None),
+    };
+    let old = fs::read_to_string(&path).ok().map(|s| s.trim().to_string());
+    fs::write(&path, lang_code)
+        .map_err(|e| format!("Failed to write UserPreferredLang: {}", e))?;
+    Ok(old)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

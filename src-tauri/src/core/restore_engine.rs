@@ -136,6 +136,20 @@ pub fn execute_restore(backup_path: &Path) -> RestoreResult {
         }
     }
 
+    if let Some(orig_pref) = &manifest.original_user_preferred_lang {
+        let game_id_enum = match manifest.game.as_str() {
+            "fh5" => Some(super::game_detector::GameId::Fh5),
+            "fh6" => Some(super::game_detector::GameId::Fh6),
+            _ => None,
+        };
+        if let Some(gid) = game_id_enum {
+            match super::steam_language::set_user_preferred_lang(gid, orig_pref) {
+                Ok(_) => { let _ = logger::log_operation(&manifest.game, "info", &format!("Restored UserPreferredLang to '{}'", orig_pref)); }
+                Err(e) => { let _ = logger::log_operation(&manifest.game, "warn", &format!("Failed to restore UserPreferredLang: {}", e)); }
+            }
+        }
+    }
+
     let _ = logger::log_operation(
         &manifest.game,
         "info",
@@ -207,6 +221,7 @@ mod tests {
             created_at: "2025-01-01T00:00:00+00:00".into(),
             manifest_path: None,
             original_steam_language: None,
+            original_user_preferred_lang: None,
             files: vec![BackupFileEntry {
                 path: "EN.zip".into(),
                 original_sha256: original_hash,
