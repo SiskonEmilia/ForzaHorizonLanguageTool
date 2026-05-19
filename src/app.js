@@ -802,6 +802,16 @@
     if (!win) return;
     const appWindow = win.getCurrentWindow();
 
+    document.getElementById('titlebar').addEventListener('mousedown', (e) => {
+      if (e.target.closest('.titlebar-controls')) return;
+      if (e.button === 0) appWindow.startDragging();
+    });
+    document.getElementById('titlebar').addEventListener('dblclick', async (e) => {
+      if (e.target.closest('.titlebar-controls')) return;
+      if (await appWindow.isMaximized()) appWindow.unmaximize();
+      else appWindow.maximize();
+    });
+
     document.getElementById('titlebar-minimize').addEventListener('click', () => appWindow.minimize());
     document.getElementById('titlebar-maximize').addEventListener('click', async () => {
       if (await appWindow.isMaximized()) {
