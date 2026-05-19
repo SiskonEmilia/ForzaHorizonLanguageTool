@@ -1,0 +1,28 @@
+[package]
+name = "fh-language-combo-tool"
+version = "1.0.0"
+edition = "2024"
+
+[lib]
+name = "fh_language_combo_tool_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+chrono = { version = "0.4", features = ["serde"] }
+thiserror = "2"
+winreg = "0.55"
+log = "0.4"
+env_logger = "0.11"
+dirs = "6"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1

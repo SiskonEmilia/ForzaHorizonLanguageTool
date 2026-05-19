@@ -1,0 +1,23 @@
+target/
+src-tauri/target/
+*.exe
+*.pdb
+
+# Tauri
+src-tauri/gen/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Prototype
+ui_prototype.html
+
+# Logs
+*.log
