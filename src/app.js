@@ -367,6 +367,7 @@
       const voiceName = voicePack ? voicePack.displayName : currentStatus.voiceLanguage;
       const textName = textPack ? textPack.displayName : currentStatus.textLanguage;
       statusText.textContent = I18N.t('main.status_detail', {
+        status: label,
         voice: voiceName, text: textName,
         time: currentStatus.lastApplied ? formatDateTime(currentStatus.lastApplied) : ''
       });
