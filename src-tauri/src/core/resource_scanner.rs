@@ -84,8 +84,6 @@ pub fn scan_string_tables(resource_path: &Path) -> Result<Vec<LanguagePack>, Str
             })
             .unwrap_or_default();
 
-        let sha256 = compute_sha256(&path)?;
-
         let readable = fs::File::open(&path).is_ok();
 
         let writable = fs::OpenOptions::new().write(true).open(&path).is_ok();
@@ -96,7 +94,7 @@ pub fn scan_string_tables(resource_path: &Path) -> Result<Vec<LanguagePack>, Str
             file_name,
             path,
             size,
-            sha256,
+            sha256: String::new(),
             modified_at,
             readable,
             writable,

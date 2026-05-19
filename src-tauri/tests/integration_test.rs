@@ -129,22 +129,8 @@ fn test_scan_fh5_string_tables() {
         );
     }
 
-    // Every pack should have a valid SHA-256 (64 hex characters) and nonzero size
+    // SHA-256 is deferred (not computed during scan for performance), so we check size only
     for pack in &packs {
-        assert_eq!(
-            pack.sha256.len(),
-            64,
-            "SHA-256 for {} should be 64 hex chars, got {} chars: {}",
-            pack.code,
-            pack.sha256.len(),
-            pack.sha256
-        );
-        assert!(
-            pack.sha256.chars().all(|c| c.is_ascii_hexdigit()),
-            "SHA-256 for {} should be all hex digits: {}",
-            pack.code,
-            pack.sha256
-        );
         assert!(
             pack.size > 0,
             "Size for {} should be > 0, got {}",
