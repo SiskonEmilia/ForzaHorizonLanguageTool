@@ -7,7 +7,9 @@
 
   // ── Tauri API ──────────────────────────────────────────────────
 
-  const { invoke } = window.__TAURI__.core;
+  function invoke(cmd, args) {
+    return window.__TAURI__.core.invoke(cmd, args);
+  }
 
   // ── State ──────────────────────────────────────────────────────
 
@@ -147,10 +149,14 @@
 
   function initDisclaimer() {
     const checks = $$('.disclaimer-check');
+    const updateBtn = () => {
+      const allChecked = Array.from(checks).every((c) => c.checked);
+      btnAcceptDisclaimer.disabled = !allChecked;
+    };
     checks.forEach((cb) => {
-      cb.addEventListener('change', () => {
-        const allChecked = Array.from(checks).every((c) => c.checked);
-        btnAcceptDisclaimer.disabled = !allChecked;
+      cb.addEventListener('change', updateBtn);
+      cb.closest('.checkbox-item').addEventListener('click', () => {
+        setTimeout(updateBtn, 0);
       });
     });
 
@@ -712,10 +718,15 @@
     btnRestore.addEventListener('click', startRestoreFlow);
 
     // Confirm page checkboxes
-    $$('.confirm-check').forEach((cb) => {
-      cb.addEventListener('change', () => {
-        const allChecked = Array.from($$('.confirm-check')).every((c) => c.checked);
-        btnConfirmApply.disabled = !allChecked;
+    const confirmChecks = $$('.confirm-check');
+    const updateConfirmBtn = () => {
+      const allChecked = Array.from(confirmChecks).every((c) => c.checked);
+      btnConfirmApply.disabled = !allChecked;
+    };
+    confirmChecks.forEach((cb) => {
+      cb.addEventListener('change', updateConfirmBtn);
+      cb.closest('.checkbox-item').addEventListener('click', () => {
+        setTimeout(updateConfirmBtn, 0);
       });
     });
 

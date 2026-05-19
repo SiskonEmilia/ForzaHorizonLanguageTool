@@ -19,6 +19,21 @@ pub struct ApplyResult {
 }
 
 pub fn execute_apply(plan: &ApplyPlan, profile: &GameProfile) -> ApplyResult {
+    let backup_root = match backup_manager::get_backup_dir() {
+        Ok(dir) => dir,
+        Err(e) => {
+            return ApplyResult {
+                success: false,
+                message: format!("Failed to get backup directory: {}", e),
+                backup_path: None,
+                rolled_back: false,
+            };
+        }
+    };
+    execute_apply_to(plan, profile, &backup_root)
+}
+
+pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &Path) -> ApplyResult {
     let copy_op = match plan.operations.iter().find(|op| op.op_type == "copy_replace") {
         Some(op) => op,
         None => {
@@ -70,20 +85,8 @@ pub fn execute_apply(plan: &ApplyPlan, profile: &GameProfile) -> ApplyResult {
         };
     }
 
-    let backup_root = match backup_manager::get_backup_dir() {
-        Ok(dir) => dir,
-        Err(e) => {
-            return ApplyResult {
-                success: false,
-                message: format!("Failed to get backup directory: {}", e),
-                backup_path: None,
-                rolled_back: false,
-            };
-        }
-    };
-
     let backup_path = match backup_manager::create_backup_to(
-        &backup_root,
+        backup_root,
         &plan.game_id,
         &profile.channel,
         &profile.root_path,
@@ -290,8 +293,9 @@ mod tests {
             ],
         };
 
+        let backup_root = make_temp_dir("apply_success_backup");
         let profile = make_profile(&dir, &resource_dir);
-        let result = execute_apply(&plan, &profile);
+        let result = execute_apply_to(&plan, &profile, &backup_root);
 
         assert!(result.success, "Expected success, got: {}", result.message);
         assert!(result.backup_path.is_some());
@@ -301,6 +305,7 @@ mod tests {
         assert_eq!(target_content, b"chinese-text-data");
 
         let _ = fs::remove_dir_all(&dir);
+        let _ = fs::remove_dir_all(&backup_root);
     }
 
     #[test]

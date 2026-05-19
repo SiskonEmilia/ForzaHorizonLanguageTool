@@ -361,8 +361,9 @@ fn test_full_apply_and_restore_cycle() {
         executable_name: "ForzaHorizon5.exe".into(),
     };
 
-    // 4. Execute apply
-    let apply_result = apply_engine::execute_apply(&plan, &profile);
+    // 4. Execute apply (use temp backup root to avoid polluting real backup dir)
+    let backup_root = make_integ_temp_dir("apply_restore_backup");
+    let apply_result = apply_engine::execute_apply_to(&plan, &profile, &backup_root);
 
     assert!(
         apply_result.success,
@@ -410,7 +411,7 @@ fn test_full_apply_and_restore_cycle() {
 
     // 8. Clean up
     let _ = fs::remove_dir_all(&tmp);
-    let _ = fs::remove_dir_all(&backup_path);
+    let _ = fs::remove_dir_all(&backup_root);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
