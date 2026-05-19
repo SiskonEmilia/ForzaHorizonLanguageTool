@@ -7,7 +7,313 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="app"></div>
+  <div id="app">
+
+    <!-- ====== Disclaimer Page ====== -->
+    <div id="page-disclaimer" class="page active">
+      <div class="page-inner">
+        <div class="card disclaimer-card">
+          <div class="card-header">
+            <h1 class="disclaimer-title">FH Language Combo Tool</h1>
+            <p class="text-secondary">Forza Horizon 语音/文字语言组合工具</p>
+          </div>
+
+          <div class="disclaimer-body">
+            <div class="disclaimer-notice">
+              <svg class="icon-warn" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span>使用本工具前，请仔细阅读并确认以下事项：</span>
+            </div>
+
+            <div class="disclaimer-items">
+              <label class="checkbox-item">
+                <input type="checkbox" class="disclaimer-check" data-index="0">
+                <span class="checkmark"></span>
+                <span>本工具是<strong>非官方</strong>的第三方工具，与 Playground Games / Microsoft / Turn 10 无关。使用风险自负。</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" class="disclaimer-check" data-index="1">
+                <span class="checkmark"></span>
+                <span>本工具会<strong>修改游戏资源文件</strong>（StringTables），操作前会自动创建备份，但仍建议您手动备份重要文件。</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" class="disclaimer-check" data-index="2">
+                <span class="checkmark"></span>
+                <span>修改游戏文件可能导致<strong>游戏更新时需要重新下载</strong>相关资源，或触发文件校验。</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" class="disclaimer-check" data-index="3">
+                <span class="checkmark"></span>
+                <span>本工具<strong>仅供学习研究</strong>使用，不得用于任何商业目的。</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <button id="btn-accept-disclaimer" class="btn btn-primary btn-block" disabled>
+              我已阅读并同意以上条款，继续使用
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== Main Page ====== -->
+    <div id="page-main" class="page">
+      <div class="page-inner">
+
+        <!-- Game Selection -->
+        <div class="card">
+          <div class="card-header-row">
+            <h2 class="card-title">选择游戏</h2>
+            <div id="status-badge" class="badge badge-muted" style="display:none;"></div>
+          </div>
+
+          <div id="game-list" class="game-list">
+            <div class="empty-state" id="game-empty">
+              <div class="spinner"></div>
+              <span>正在检测已安装的游戏...</span>
+            </div>
+          </div>
+
+          <!-- Manual directory input -->
+          <div class="manual-input-section">
+            <button id="btn-toggle-manual" class="btn btn-link">
+              + 手动添加游戏目录
+            </button>
+            <div id="manual-input-area" class="manual-input-area" style="display:none;">
+              <div class="input-row">
+                <select id="manual-game-id" class="select-input manual-game-select">
+                  <option value="fh5">Forza Horizon 5</option>
+                  <option value="fh6">Forza Horizon 6</option>
+                </select>
+                <input type="text" id="manual-path" class="text-input" placeholder="粘贴游戏根目录路径，例如 D:\SteamLibrary\steamapps\common\ForzaHorizon5">
+                <button id="btn-validate-path" class="btn btn-secondary">验证</button>
+              </div>
+              <div id="manual-error" class="input-error" style="display:none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Language Selection -->
+        <div id="language-section" class="card" style="display:none;">
+          <h2 class="card-title">语言配置</h2>
+
+          <div class="language-selector">
+            <div class="lang-column">
+              <label class="lang-label">语音语言</label>
+              <p class="lang-hint">游戏内角色配音</p>
+              <select id="select-voice" class="select-input">
+                <option value="">-- 选择语音语言 --</option>
+              </select>
+            </div>
+
+            <div class="lang-arrow">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <polyline points="12 5 19 12 12 19"/>
+              </svg>
+              <span class="lang-arrow-label">文字覆盖至</span>
+            </div>
+
+            <div class="lang-column">
+              <label class="lang-label">文字语言</label>
+              <p class="lang-hint">游戏内所有显示文字</p>
+              <select id="select-text" class="select-input">
+                <option value="">-- 选择文字语言 --</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Effect Preview -->
+          <div id="effect-preview" class="effect-preview" style="display:none;">
+            <div class="effect-title">预期效果</div>
+            <div class="effect-desc" id="effect-desc"></div>
+            <div class="effect-detail" id="effect-detail"></div>
+          </div>
+
+          <!-- Current Status -->
+          <div id="current-status" class="status-bar" style="display:none;">
+            <div class="status-row">
+              <span class="status-label">当前状态：</span>
+              <span id="status-text" class="text-secondary"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div id="action-section" class="action-bar" style="display:none;">
+          <button id="btn-apply" class="btn btn-primary" disabled>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            应用配置
+          </button>
+          <button id="btn-restore" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 105.64-11.36L1 10"/>
+            </svg>
+            恢复备份
+          </button>
+        </div>
+
+      </div>
+
+      <footer class="app-footer">
+        FH Language Combo Tool v1.0.0 · 仅供学习研究 · 非官方工具
+      </footer>
+    </div>
+
+    <!-- ====== Confirm Page ====== -->
+    <div id="page-confirm" class="page">
+      <div class="page-inner">
+        <div class="card">
+          <h2 class="card-title">确认操作</h2>
+
+          <div class="confirm-plan">
+            <div class="plan-header">操作计划</div>
+            <div class="plan-grid">
+              <div class="plan-item">
+                <span class="plan-label">游戏</span>
+                <span id="confirm-game" class="plan-value"></span>
+              </div>
+              <div class="plan-item">
+                <span class="plan-label">语音语言</span>
+                <span id="confirm-voice" class="plan-value"></span>
+              </div>
+              <div class="plan-item">
+                <span class="plan-label">文字语言</span>
+                <span id="confirm-text" class="plan-value"></span>
+              </div>
+              <div class="plan-item plan-item-full">
+                <span class="plan-label">操作说明</span>
+                <span id="confirm-desc" class="plan-value plan-value-desc"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="confirm-checks">
+            <label class="checkbox-item">
+              <input type="checkbox" class="confirm-check" data-index="0">
+              <span class="checkmark"></span>
+              <span>我确认游戏<strong>当前未在运行</strong></span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" class="confirm-check" data-index="1">
+              <span class="checkmark"></span>
+              <span>我了解此操作将<strong>修改游戏资源文件</strong>，工具会自动备份原始文件</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" class="confirm-check" data-index="2">
+              <span class="checkmark"></span>
+              <span>我了解游戏更新后可能需要<strong>重新应用</strong>此配置</span>
+            </label>
+          </div>
+
+          <div class="card-footer confirm-footer">
+            <button id="btn-confirm-back" class="btn btn-secondary">返回</button>
+            <button id="btn-confirm-apply" class="btn btn-primary" disabled>
+              确认应用
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== Success Result Page ====== -->
+    <div id="page-result-success" class="page">
+      <div class="page-inner">
+        <div class="card result-card">
+          <div class="result-icon result-icon-success">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
+          <h2 class="result-title">配置成功</h2>
+          <p id="result-success-msg" class="result-message"></p>
+          <div id="result-success-detail" class="result-detail"></div>
+          <div class="card-footer">
+            <button id="btn-success-back" class="btn btn-primary btn-block">返回主页</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== Error Result Page ====== -->
+    <div id="page-result-error" class="page">
+      <div class="page-inner">
+        <div class="card result-card">
+          <div class="result-icon result-icon-error">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="15" y1="9" x2="9" y2="15"/>
+              <line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+          </div>
+          <h2 class="result-title result-title-error">操作失败</h2>
+          <p id="result-error-msg" class="result-message"></p>
+          <div id="result-error-detail" class="result-detail"></div>
+          <div class="card-footer">
+            <button id="btn-error-back" class="btn btn-secondary btn-block">返回主页</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== Restore Page ====== -->
+    <div id="page-restore" class="page">
+      <div class="page-inner">
+        <div class="card">
+          <h2 class="card-title">恢复备份</h2>
+
+          <div id="backup-list" class="backup-list">
+            <div class="empty-state" id="backup-empty">
+              <span class="text-muted">正在加载备份列表...</span>
+            </div>
+          </div>
+
+          <div id="restore-confirm-area" style="display:none;">
+            <div class="restore-info">
+              <div class="plan-grid">
+                <div class="plan-item">
+                  <span class="plan-label">备份时间</span>
+                  <span id="restore-time" class="plan-value"></span>
+                </div>
+                <div class="plan-item">
+                  <span class="plan-label">语音语言</span>
+                  <span id="restore-voice" class="plan-value"></span>
+                </div>
+                <div class="plan-item">
+                  <span class="plan-label">文字语言</span>
+                  <span id="restore-text" class="plan-value"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer confirm-footer">
+            <button id="btn-restore-back" class="btn btn-secondary">返回</button>
+            <button id="btn-restore-confirm" class="btn btn-danger" style="display:none;">
+              确认恢复
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="display:none;">
+      <div class="loading-content">
+        <div class="spinner spinner-lg"></div>
+        <p id="loading-text" class="loading-text">处理中...</p>
+      </div>
+    </div>
+
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>
