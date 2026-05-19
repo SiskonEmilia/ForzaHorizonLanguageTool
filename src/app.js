@@ -795,10 +795,29 @@
     }
   }
 
+  // ── Custom Titlebar Controls ────────────────────────────────────
+
+  function initTitlebar() {
+    const win = window.__TAURI__ && window.__TAURI__.window;
+    if (!win) return;
+    const appWindow = win.getCurrentWindow();
+
+    document.getElementById('titlebar-minimize').addEventListener('click', () => appWindow.minimize());
+    document.getElementById('titlebar-maximize').addEventListener('click', async () => {
+      if (await appWindow.isMaximized()) {
+        appWindow.unmaximize();
+      } else {
+        appWindow.maximize();
+      }
+    });
+    document.getElementById('titlebar-close').addEventListener('click', () => appWindow.close());
+  }
+
   // Wait for DOM to be ready
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => { initTitlebar(); init(); });
   } else {
+    initTitlebar();
     init();
   }
 })();

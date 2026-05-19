@@ -46,9 +46,74 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-#app {
+/* ── Custom Titlebar ────────────────────────────────────────────── */
+
+#titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  background: var(--bg-primary);
+  padding: 0 4px 0 12px;
+  user-select: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+}
+
+.titlebar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.titlebar-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+}
+
+.titlebar-title {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.titlebar-controls {
+  display: flex;
   height: 100%;
+}
+
+.titlebar-btn {
+  width: 46px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s, color 0.1s;
+}
+
+.titlebar-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.titlebar-close:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+#app {
+  height: calc(100% - 36px);
+  margin-top: 36px;
   position: relative;
+  overflow: hidden;
 }
 
 /* ── Pages ──────────────────────────────────────────────────────── */
@@ -288,6 +353,13 @@ h1 {
 
 .disclaimer-card {
   margin-top: 20px;
+}
+
+.disclaimer-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  margin-bottom: 12px;
 }
 
 .disclaimer-title {

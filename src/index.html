@@ -7,6 +7,25 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- ====== Custom Titlebar ====== -->
+  <div id="titlebar" data-tauri-drag-region>
+    <div class="titlebar-left" data-tauri-drag-region>
+      <img src="logo.png" class="titlebar-icon" alt="">
+      <span class="titlebar-title" data-tauri-drag-region>FH Language Combo Tool</span>
+    </div>
+    <div class="titlebar-controls">
+      <button class="titlebar-btn" id="titlebar-minimize">
+        <svg width="10" height="1" viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor"/></svg>
+      </button>
+      <button class="titlebar-btn" id="titlebar-maximize">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="9" height="9"/></svg>
+      </button>
+      <button class="titlebar-btn titlebar-close" id="titlebar-close">
+        <svg width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.2"><line x1="0" y1="0" x2="10" y2="10"/><line x1="10" y1="0" x2="0" y2="10"/></svg>
+      </button>
+    </div>
+  </div>
+
   <div id="app">
 
     <!-- ====== Disclaimer Page ====== -->
@@ -14,6 +33,7 @@
       <div class="page-inner">
         <div class="card disclaimer-card">
           <div class="card-header">
+            <img src="logo.png" class="disclaimer-logo" alt="">
             <h1 class="disclaimer-title">FH Language Combo Tool</h1>
             <p class="text-secondary">Forza Horizon 语音/文字语言组合工具</p>
           </div>
