@@ -798,29 +798,29 @@
   // ── Custom Titlebar Controls ────────────────────────────────────
 
   function initTitlebar() {
-    const win = window.__TAURI__ && window.__TAURI__.window;
-    if (!win) return;
-    const appWindow = win.getCurrentWindow();
+    const invokePlugin = (plugin, cmd, args) =>
+      invoke('plugin:' + plugin + '|' + cmd, args || {});
 
     document.getElementById('titlebar').addEventListener('mousedown', (e) => {
       if (e.target.closest('.titlebar-controls')) return;
-      if (e.button === 0) appWindow.startDragging();
-    });
-    document.getElementById('titlebar').addEventListener('dblclick', async (e) => {
-      if (e.target.closest('.titlebar-controls')) return;
-      if (await appWindow.isMaximized()) appWindow.unmaximize();
-      else appWindow.maximize();
+      if (e.button === 0) invokePlugin('window', 'start_dragging', { label: 'main' });
     });
 
-    document.getElementById('titlebar-minimize').addEventListener('click', () => appWindow.minimize());
+    document.getElementById('titlebar-minimize').addEventListener('click', () =>
+      invokePlugin('window', 'minimize', { label: 'main' }));
+
     document.getElementById('titlebar-maximize').addEventListener('click', async () => {
-      if (await appWindow.isMaximized()) {
-        appWindow.unmaximize();
-      } else {
-        appWindow.maximize();
+      try {
+        const maximized = await invokePlugin('window', 'is_maximized', { label: 'main' });
+        if (maximized) invokePlugin('window', 'unmaximize', { label: 'main' });
+        else invokePlugin('window', 'maximize', { label: 'main' });
+      } catch (_) {
+        invokePlugin('window', 'maximize', { label: 'main' });
       }
     });
-    document.getElementById('titlebar-close').addEventListener('click', () => appWindow.close());
+
+    document.getElementById('titlebar-close').addEventListener('click', () =>
+      invokePlugin('window', 'close', { label: 'main' }));
   }
 
   // Wait for DOM to be ready
