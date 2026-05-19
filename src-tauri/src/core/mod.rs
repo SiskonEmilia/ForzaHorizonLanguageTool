@@ -5,3 +5,4 @@ pub mod backup_manager;
 pub mod apply_engine;
 pub mod restore_engine;
 pub mod logger;
+pub mod steam_language;

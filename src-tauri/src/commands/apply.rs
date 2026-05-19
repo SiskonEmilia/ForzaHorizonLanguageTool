@@ -8,8 +8,11 @@ pub fn apply_config(
     voice_lang: String,
     text_lang: String,
     resource_path: String,
+    manifest_path: Option<String>,
 ) -> Result<ApplyResult, String> {
     let resource = std::path::Path::new(&resource_path);
+    let manifest_for_profile = manifest_path.clone();
+    let manifest_p = manifest_path.as_deref().map(std::path::Path::new);
 
     let gid = match game_id.as_str() {
         "fh5" => GameId::Fh5,
@@ -45,6 +48,7 @@ pub fn apply_config(
             GameId::Fh5 => "ForzaHorizon5.exe".into(),
             GameId::Fh6 => "forzahorizon6.exe".into(),
         },
+        manifest_path: manifest_for_profile.map(std::path::PathBuf::from),
     };
 
     let backup_root = crate::core::backup_manager::get_backup_dir()?;
@@ -54,6 +58,7 @@ pub fn apply_config(
         &text_lang,
         resource,
         &backup_root,
+        manifest_p,
     )?;
     Ok(apply_engine::execute_apply(&plan, &profile))
 }

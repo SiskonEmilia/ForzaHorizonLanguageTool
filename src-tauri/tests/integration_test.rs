@@ -250,7 +250,7 @@ fn test_generate_plan_jp_voice_chs_text_fh5() {
     let backup_root = std::env::temp_dir().join("fh_integ_plan_test");
     let _ = fs::create_dir_all(&backup_root);
 
-    let plan = language_mapper::generate_apply_plan("fh5", "JP", "CHS", fh5_res, &backup_root)
+    let plan = language_mapper::generate_apply_plan("fh5", "JP", "CHS", fh5_res, &backup_root, None)
         .expect("generate_apply_plan should succeed for JP voice + CHS text on FH5");
 
     assert_eq!(plan.game_id, "fh5");
@@ -334,6 +334,8 @@ fn test_full_apply_and_restore_cycle() {
         text_language: "CHS".into(),
         source_file: "CHS.zip".into(),
         target_file: "EN.zip".into(),
+        steam_language: None,
+        manifest_path: None,
         operations: vec![
             Operation {
                 op_type: "backup".into(),
@@ -359,6 +361,7 @@ fn test_full_apply_and_restore_cycle() {
         root_path: tmp.clone(),
         resource_path: resource_dir.clone(),
         executable_name: "ForzaHorizon5.exe".into(),
+        manifest_path: None,
     };
 
     // 4. Execute apply (use temp backup root to avoid polluting real backup dir)
@@ -444,7 +447,7 @@ fn test_plan_same_language_rejected() {
     let backup_root = std::env::temp_dir().join("fh_integ_same_lang_test");
     let _ = fs::create_dir_all(&backup_root);
 
-    let result = language_mapper::generate_apply_plan("fh5", "EN", "en", fh5_res, &backup_root);
+    let result = language_mapper::generate_apply_plan("fh5", "EN", "en", fh5_res, &backup_root, None);
     assert!(
         result.is_err(),
         "generate_apply_plan should reject same voice and text language"

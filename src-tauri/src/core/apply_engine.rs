@@ -16,6 +16,8 @@ pub struct ApplyResult {
     pub message: String,
     pub backup_path: Option<String>,
     pub rolled_back: bool,
+    pub steam_language_set: bool,
+    pub steam_language_warning: Option<String>,
 }
 
 pub fn execute_apply(plan: &ApplyPlan, profile: &GameProfile) -> ApplyResult {
@@ -27,6 +29,8 @@ pub fn execute_apply(plan: &ApplyPlan, profile: &GameProfile) -> ApplyResult {
                 message: format!("Failed to get backup directory: {}", e),
                 backup_path: None,
                 rolled_back: false,
+                steam_language_set: false,
+                steam_language_warning: None,
             };
         }
     };
@@ -42,6 +46,8 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
                 message: "Apply plan has no copy_replace operation".into(),
                 backup_path: None,
                 rolled_back: false,
+                steam_language_set: false,
+                steam_language_warning: None,
             };
         }
     };
@@ -54,6 +60,8 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
                 message: "Apply plan has no backup operation".into(),
                 backup_path: None,
                 rolled_back: false,
+                steam_language_set: false,
+                steam_language_warning: None,
             };
         }
     };
@@ -70,6 +78,8 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
             ),
             backup_path: None,
             rolled_back: false,
+            steam_language_set: false,
+            steam_language_warning: None,
         };
     }
 
@@ -82,8 +92,14 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
             ),
             backup_path: None,
             rolled_back: false,
+            steam_language_set: false,
+            steam_language_warning: None,
         };
     }
+
+    let original_steam_language = plan.manifest_path.as_ref().and_then(|mp| {
+        super::steam_language::read_manifest_language(Path::new(mp))
+    });
 
     let backup_path = match backup_manager::create_backup_to(
         backup_root,
@@ -95,6 +111,8 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
         &plan.text_language,
         target_path,
         &plan.source_file,
+        plan.manifest_path.as_deref().map(Path::new),
+        original_steam_language.as_deref(),
     ) {
         Ok(path) => path,
         Err(e) => {
@@ -103,6 +121,8 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
                 message: format!("Failed to create backup: {}", e),
                 backup_path: None,
                 rolled_back: false,
+                steam_language_set: false,
+                steam_language_warning: None,
             };
         }
     };
@@ -117,6 +137,8 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
             message: format!("Failed to copy source to temp file: {}", e),
             backup_path: Some(backup_path_str),
             rolled_back: false,
+            steam_language_set: false,
+            steam_language_warning: None,
         };
     }
 
@@ -129,6 +151,8 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
                 message: format!("Failed to compute SHA-256 of source: {}", e),
                 backup_path: Some(backup_path_str),
                 rolled_back: false,
+                steam_language_set: false,
+                steam_language_warning: None,
             };
         }
     };
@@ -142,6 +166,8 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
                 message: format!("Failed to compute SHA-256 of temp file: {}", e),
                 backup_path: Some(backup_path_str),
                 rolled_back: false,
+                steam_language_set: false,
+                steam_language_warning: None,
             };
         }
     };
@@ -156,6 +182,8 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
             ),
             backup_path: Some(backup_path_str),
             rolled_back: false,
+            steam_language_set: false,
+            steam_language_warning: None,
         };
     }
 
@@ -167,6 +195,8 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
             message: format!("Failed to rename temp file to target: {}", e),
             backup_path: Some(backup_path_str),
             rolled_back,
+            steam_language_set: false,
+            steam_language_warning: None,
         };
     }
 
@@ -182,6 +212,8 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
                 ),
                 backup_path: Some(backup_path_str),
                 rolled_back,
+                steam_language_set: false,
+                steam_language_warning: None,
             };
         }
         Err(e) => {
@@ -191,7 +223,29 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
                 message: format!("Failed to verify final target: {}", e),
                 backup_path: Some(backup_path_str),
                 rolled_back,
+                steam_language_set: false,
+                steam_language_warning: None,
             };
+        }
+    }
+
+    let mut steam_language_set = false;
+    let mut steam_language_warning: Option<String> = None;
+
+    if let Some(ref mp) = plan.manifest_path {
+        if let Some(ref steam_lang) = plan.steam_language {
+            match super::steam_language::set_manifest_language(Path::new(mp), steam_lang) {
+                Ok(_) => {
+                    steam_language_set = true;
+                    let _ = logger::log_operation(&plan.game_id, "info",
+                        &format!("Set Steam language to '{}'", steam_lang));
+                }
+                Err(e) => {
+                    steam_language_warning = Some(format!("文件替换成功，但无法自动设置 Steam 语言: {}", e));
+                    let _ = logger::log_operation(&plan.game_id, "warn",
+                        &format!("Failed to set Steam language: {}", e));
+                }
+            }
         }
     }
 
@@ -212,6 +266,8 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
         ),
         backup_path: Some(backup_path_str),
         rolled_back: false,
+        steam_language_set,
+        steam_language_warning,
     }
 }
 
@@ -257,6 +313,7 @@ mod tests {
             root_path: root.to_path_buf(),
             resource_path: resource.to_path_buf(),
             executable_name: "ForzaHorizon5.exe".into(),
+            manifest_path: None,
         }
     }
 
@@ -277,6 +334,8 @@ mod tests {
             text_language: "CHS".into(),
             source_file: "CHS.zip".into(),
             target_file: "EN.zip".into(),
+            steam_language: None,
+            manifest_path: None,
             operations: vec![
                 Operation {
                     op_type: "backup".into(),
@@ -324,6 +383,8 @@ mod tests {
             text_language: "CHS".into(),
             source_file: "CHS.zip".into(),
             target_file: "EN.zip".into(),
+            steam_language: None,
+            manifest_path: None,
             operations: vec![
                 Operation {
                     op_type: "backup".into(),

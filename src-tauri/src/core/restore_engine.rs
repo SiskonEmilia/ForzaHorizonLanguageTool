@@ -126,6 +126,16 @@ pub fn execute_restore(backup_path: &Path) -> RestoreResult {
         }
     }
 
+    if let (Some(mp), Some(orig_lang)) = (&manifest.manifest_path, &manifest.original_steam_language) {
+        let mp_path = std::path::Path::new(mp);
+        if mp_path.exists() {
+            match super::steam_language::set_manifest_language(mp_path, orig_lang) {
+                Ok(_) => { let _ = logger::log_operation(&manifest.game, "info", &format!("Restored Steam language to '{}'", orig_lang)); }
+                Err(e) => { let _ = logger::log_operation(&manifest.game, "warn", &format!("Failed to restore Steam language: {}", e)); }
+            }
+        }
+    }
+
     let _ = logger::log_operation(
         &manifest.game,
         "info",
@@ -195,6 +205,8 @@ mod tests {
             target_file: "EN.zip".into(),
             source_file: "CHS.zip".into(),
             created_at: "2025-01-01T00:00:00+00:00".into(),
+            manifest_path: None,
+            original_steam_language: None,
             files: vec![BackupFileEntry {
                 path: "EN.zip".into(),
                 original_sha256: original_hash,

@@ -26,6 +26,7 @@ pub struct GameProfile {
     pub root_path: PathBuf,
     pub resource_path: PathBuf,
     pub executable_name: String,
+    pub manifest_path: Option<PathBuf>,
 }
 
 impl GameId {
@@ -81,7 +82,8 @@ pub fn detect_steam_games() -> Vec<GameProfile> {
             };
 
             let root = lib_path.join("steamapps").join("common").join(&install_dir);
-            if let Ok(profile) = validate_game_directory(&root, game_id) {
+            if let Ok(mut profile) = validate_game_directory(&root, game_id) {
+                profile.manifest_path = Some(manifest.clone());
                 results.push(profile);
             }
         }
@@ -137,6 +139,7 @@ pub fn validate_game_directory(path: &Path, game_id: GameId) -> Result<GameProfi
         root_path: root,
         resource_path,
         executable_name: game_id.executable().into(),
+        manifest_path: None,
     })
 }
 

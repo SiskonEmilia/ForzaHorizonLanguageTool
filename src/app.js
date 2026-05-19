@@ -411,6 +411,7 @@
       voiceLang: selectVoice.value,
       textLang: selectText.value,
       resourcePath: selectedGame.resourcePath,
+      manifestPath: selectedGame.manifestPath || null,
       voiceDisplayName: voicePack ? voicePack.displayName : selectVoice.value,
       textDisplayName: textPack ? textPack.displayName : selectText.value
     };
@@ -419,11 +420,14 @@
     confirmGame.textContent = selectedGame.displayName;
     confirmVoice.textContent = currentPlan.voiceDisplayName + ' (' + currentPlan.voiceLang + ')';
     confirmText.textContent = currentPlan.textDisplayName + ' (' + currentPlan.textLang + ')';
-    confirmDesc.textContent =
-      '将 ' + currentPlan.textLang + '.zip（文字语言包）复制覆盖到 ' +
-      currentPlan.voiceLang + '.zip（语音语言包），' +
-      '使游戏启动时加载 ' + currentPlan.voiceDisplayName + ' 语音 + ' +
-      currentPlan.textDisplayName + ' 文字。';
+    let desc = '将 ' + currentPlan.textLang + '.zip（文字语言包）复制覆盖到 ' +
+      currentPlan.voiceLang + '.zip（语音语言包）。';
+    if (currentPlan.manifestPath) {
+      desc += '\n同时自动设置 Steam 游戏启动语言为 ' + currentPlan.voiceDisplayName + '，无需手动切换。';
+    } else {
+      desc += '\n请手动在 Steam 游戏属性中将语言设置为 ' + currentPlan.voiceDisplayName + '。';
+    }
+    confirmDesc.textContent = desc;
 
     // Reset confirm checkboxes
     $$('.confirm-check').forEach((cb) => { cb.checked = false; });
@@ -442,15 +446,22 @@
         gameId: currentPlan.gameId,
         voiceLang: currentPlan.voiceLang,
         textLang: currentPlan.textLang,
-        resourcePath: currentPlan.resourcePath
+        resourcePath: currentPlan.resourcePath,
+        manifestPath: currentPlan.manifestPath
       });
 
       hideLoading();
 
       if (result.success) {
-        resultSuccessMsg.textContent =
-          '已成功将 ' + currentPlan.textDisplayName + ' 文字应用到 ' +
+        let msg = '已成功将 ' + currentPlan.textDisplayName + ' 文字应用到 ' +
           currentPlan.voiceDisplayName + ' 语音包。';
+        if (result.steamLanguageSet) {
+          msg += '\nSteam 启动语言已自动设置为 ' + currentPlan.voiceDisplayName + '。';
+        }
+        if (result.steamLanguageWarning) {
+          msg += '\n' + result.steamLanguageWarning;
+        }
+        resultSuccessMsg.textContent = msg;
 
         let detail = '';
         if (result.backupPath) {

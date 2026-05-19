@@ -12,6 +12,8 @@ pub struct ApplyPlan {
     pub source_file: String,
     pub target_file: String,
     pub operations: Vec<Operation>,
+    pub steam_language: Option<String>,
+    pub manifest_path: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -89,6 +91,7 @@ pub fn generate_apply_plan(
     text_lang: &str,
     resource_path: &Path,
     backup_root: &Path,
+    manifest_path: Option<&Path>,
 ) -> Result<ApplyPlan, String> {
     if voice_lang.eq_ignore_ascii_case(text_lang) {
         return Err("Voice language and text language must be different".into());
@@ -127,6 +130,9 @@ pub fn generate_apply_plan(
         },
     ];
 
+    let steam_language = crate::core::steam_language::code_to_steam_language(voice_lang)
+        .map(|s| s.to_string());
+
     Ok(ApplyPlan {
         game_id: game_id.to_string(),
         voice_language: voice_upper,
@@ -134,6 +140,8 @@ pub fn generate_apply_plan(
         source_file,
         target_file,
         operations,
+        steam_language,
+        manifest_path: manifest_path.map(|p| p.to_string_lossy().to_string()),
     })
 }
 
@@ -191,7 +199,7 @@ mod tests {
         let dir = make_temp_dir("same_lang");
         let backup = make_temp_dir("same_lang_backup");
 
-        let result = generate_apply_plan("fh5", "EN", "en", &dir, &backup);
+        let result = generate_apply_plan("fh5", "EN", "en", &dir, &backup, None);
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
@@ -208,7 +216,7 @@ mod tests {
         fs::write(dir.join("EN.zip"), b"").unwrap();
         fs::write(dir.join("CHS.zip"), b"").unwrap();
 
-        let plan = generate_apply_plan("fh5", "EN", "CHS", &dir, &backup).unwrap();
+        let plan = generate_apply_plan("fh5", "EN", "CHS", &dir, &backup, None).unwrap();
 
         assert_eq!(plan.game_id, "fh5");
         assert_eq!(plan.voice_language, "EN");

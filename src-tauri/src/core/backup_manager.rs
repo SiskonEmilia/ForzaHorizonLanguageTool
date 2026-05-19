@@ -16,6 +16,10 @@ pub struct BackupManifest {
     pub source_file: String,
     pub created_at: String,
     pub files: Vec<BackupFileEntry>,
+    #[serde(default)]
+    pub manifest_path: Option<String>,
+    #[serde(default)]
+    pub original_steam_language: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -50,30 +54,6 @@ pub fn get_backup_dir() -> Result<PathBuf, String> {
     Ok(backup_dir)
 }
 
-pub fn create_backup(
-    game_id: &str,
-    channel: &str,
-    game_root: &Path,
-    resource_dir: &Path,
-    voice_lang: &str,
-    text_lang: &str,
-    target_file: &Path,
-    source_file: &str,
-) -> Result<PathBuf, String> {
-    let backup_root = get_backup_dir()?;
-    create_backup_to(
-        &backup_root,
-        game_id,
-        channel,
-        game_root,
-        resource_dir,
-        voice_lang,
-        text_lang,
-        target_file,
-        source_file,
-    )
-}
-
 pub fn create_backup_to(
     backup_root: &Path,
     game_id: &str,
@@ -84,6 +64,8 @@ pub fn create_backup_to(
     text_lang: &str,
     target_file: &Path,
     source_file: &str,
+    acf_manifest_path: Option<&Path>,
+    original_steam_language: Option<&str>,
 ) -> Result<PathBuf, String> {
     let now = chrono::Local::now();
     let dir_name = format!(
@@ -135,6 +117,8 @@ pub fn create_backup_to(
             path: file_name.to_string_lossy().to_string(),
             original_sha256: source_hash,
         }],
+        manifest_path: acf_manifest_path.map(|p| p.to_string_lossy().to_string()),
+        original_steam_language: original_steam_language.map(|s| s.to_string()),
     };
 
     let manifest_json = serde_json::to_string_pretty(&manifest)
@@ -263,6 +247,8 @@ mod tests {
             "ja-JP",
             &target_file,
             "StringTable_ja-JP.txt",
+            None,
+            None,
         );
 
         let backup_dir = result.expect("create_backup_to should succeed");
@@ -319,6 +305,8 @@ mod tests {
                 path: "StringTable_en-US.txt".to_string(),
                 original_sha256: "abc123".to_string(),
             }],
+            manifest_path: None,
+            original_steam_language: None,
         };
 
         let json = serde_json::to_string_pretty(&manifest).unwrap();
