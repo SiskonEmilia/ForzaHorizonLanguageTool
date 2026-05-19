@@ -26,7 +26,7 @@
   // Case-insensitive comparison is used against scanned pack codes.
 
   const VOICE_CODES = new Set([
-    'EN', 'JP', 'CHS', 'CHT', 'BR', 'DE', 'ES', 'FR', 'IT', 'KO', 'MX'
+    'EN', 'GB', 'JP', 'CHS', 'CHT', 'BR', 'DE', 'ES', 'FR', 'IT', 'KO', 'MX'
   ]);
 
   // ── Status Labels ──────────────────────────────────────────────
