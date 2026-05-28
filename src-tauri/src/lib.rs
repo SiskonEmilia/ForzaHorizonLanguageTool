@@ -13,6 +13,7 @@ pub fn run() {
             detect::validate_game_directory,
             scan::scan_language_packs,
             apply::apply_config,
+            apply::reapply_config,
             restore::restore_backup,
             restore::list_backups,
             status::get_status,

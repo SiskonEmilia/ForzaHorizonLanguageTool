@@ -97,6 +97,22 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
         };
     }
 
+    // Hash of the content we will write into the target. Computed once here and
+    // reused for the backup manifest (applied_sha256) and the copy verification.
+    let source_hash = match resource_scanner::compute_sha256(source_path) {
+        Ok(h) => h,
+        Err(e) => {
+            return ApplyResult {
+                success: false,
+                message: format!("Failed to compute SHA-256 of source: {}", e),
+                backup_path: None,
+                rolled_back: false,
+                steam_language_set: false,
+                steam_language_warning: None,
+            };
+        }
+    };
+
     let original_steam_language = plan.manifest_path.as_ref().and_then(|mp| {
         super::steam_language::read_manifest_language(Path::new(mp))
     });
@@ -121,6 +137,7 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
         plan.manifest_path.as_deref().map(Path::new),
         original_steam_language.as_deref(),
         original_user_preferred_lang.as_deref(),
+        Some(source_hash.as_str()),
     ) {
         Ok(path) => path,
         Err(e) => {
@@ -149,21 +166,6 @@ pub fn execute_apply_to(plan: &ApplyPlan, profile: &GameProfile, backup_root: &P
             steam_language_warning: None,
         };
     }
-
-    let source_hash = match resource_scanner::compute_sha256(source_path) {
-        Ok(h) => h,
-        Err(e) => {
-            let _ = fs::remove_file(&temp_path);
-            return ApplyResult {
-                success: false,
-                message: format!("Failed to compute SHA-256 of source: {}", e),
-                backup_path: Some(backup_path_str),
-                rolled_back: false,
-                steam_language_set: false,
-                steam_language_warning: None,
-            };
-        }
-    };
 
     let temp_hash = match resource_scanner::compute_sha256(&temp_path) {
         Ok(h) => h,

@@ -817,7 +817,7 @@ dependencies = [
 
 [[package]]
 name = "fh-language-combo-tool"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "chrono",
  "dirs",

@@ -64,13 +64,12 @@ pub fn get_status(game_id: String, resource_path: String) -> Result<ConfigStatus
 
     let original_hash = manifest.files.first().map(|f| f.original_sha256.as_str());
 
-    let state = if source_hash.as_deref() == Some(current_hash.as_str()) {
-        "applied"
-    } else if original_hash == Some(current_hash.as_str()) {
-        "reverted"
-    } else {
-        "modified"
-    };
+    let state = classify_state(
+        &current_hash,
+        source_hash.as_deref(),
+        original_hash,
+        manifest.applied_sha256.as_deref(),
+    );
 
     Ok(ConfigStatus {
         state: state.into(),
@@ -79,4 +78,98 @@ pub fn get_status(game_id: String, resource_path: String) -> Result<ConfigStatus
         text_language: Some(manifest.text_language),
         last_applied: Some(manifest.created_at),
     })
+}
+
+/// Classify the current state of the target (voice) file relative to the latest
+/// backup, given the hashes of:
+/// - `current`: the target file currently on disk (e.g. `EN.zip`)
+/// - `source`: the latest source text pack on disk (e.g. `CHS.zip`), if readable
+/// - `original`: the original target content recorded in the backup manifest
+/// - `applied`: the content we wrote into the target at apply time
+///   (= source text pack at apply time), if recorded
+///
+/// Priority:
+/// 1. matches latest source text pack    -> `applied`  (override active & up to date)
+/// 2. matches recorded original          -> `reverted` (back to the untouched voice pack)
+/// 3. matches what we applied            -> `outdated` (override intact, but text pack updated)
+/// 4. otherwise                          -> `modified`
+///
+/// Backups created before `applied_sha256` existed pass `applied = None`, so the
+/// `outdated` branch never fires for them and behaviour falls back to `modified`.
+fn classify_state(
+    current: &str,
+    source: Option<&str>,
+    original: Option<&str>,
+    applied: Option<&str>,
+) -> &'static str {
+    if source == Some(current) {
+        "applied"
+    } else if original == Some(current) {
+        "reverted"
+    } else if applied == Some(current) {
+        "outdated"
+    } else {
+        "modified"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::classify_state;
+
+    #[test]
+    fn test_applied_when_target_matches_latest_source() {
+        // EN.zip currently equals the latest CHS.zip -> override active & in sync.
+        assert_eq!(
+            classify_state("chs_v2", Some("chs_v2"), Some("en_orig"), Some("chs_v2")),
+            "applied"
+        );
+    }
+
+    #[test]
+    fn test_reverted_when_target_matches_original() {
+        assert_eq!(
+            classify_state("en_orig", Some("chs_v2"), Some("en_orig"), Some("chs_v1")),
+            "reverted"
+        );
+    }
+
+    #[test]
+    fn test_outdated_when_source_updated_but_override_intact() {
+        // EN.zip still holds what we wrote (chs_v1), but CHS.zip was updated to chs_v2.
+        assert_eq!(
+            classify_state("chs_v1", Some("chs_v2"), Some("en_orig"), Some("chs_v1")),
+            "outdated"
+        );
+    }
+
+    #[test]
+    fn test_modified_when_nothing_matches() {
+        assert_eq!(
+            classify_state("something_else", Some("chs_v2"), Some("en_orig"), Some("chs_v1")),
+            "modified"
+        );
+    }
+
+    #[test]
+    fn test_legacy_backup_without_applied_falls_back_to_modified() {
+        // Old backups have applied = None; the outdated case cannot be detected.
+        assert_eq!(
+            classify_state("chs_v1", Some("chs_v2"), Some("en_orig"), None),
+            "modified"
+        );
+    }
+
+    #[test]
+    fn test_applied_takes_priority_when_source_unreadable() {
+        // Source missing (None) -> not "applied"; falls through to original/applied.
+        assert_eq!(
+            classify_state("en_orig", None, Some("en_orig"), Some("chs_v1")),
+            "reverted"
+        );
+        assert_eq!(
+            classify_state("chs_v1", None, Some("en_orig"), Some("chs_v1")),
+            "outdated"
+        );
+    }
 }

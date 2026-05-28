@@ -656,6 +656,71 @@ h1 {
   flex-shrink: 0;
 }
 
+/* ── Header right group / language switcher ─────────────────────── */
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+}
+
+.lang-globe {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* ── Outdated text pack banner ──────────────────────────────────── */
+
+.outdated-banner {
+  margin-top: 12px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(255, 165, 2, 0.1);
+  border: 1px solid rgba(255, 165, 2, 0.3);
+  border-radius: var(--radius-sm);
+}
+
+.outdated-banner-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.outdated-banner .icon-warn {
+  color: var(--warn);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Red variant for the "modified" (changed outside the tool) state. */
+.outdated-banner.outdated-banner-danger {
+  background: rgba(255, 71, 87, 0.1);
+  border-color: rgba(255, 71, 87, 0.3);
+}
+
+.outdated-banner.outdated-banner-danger .icon-warn {
+  color: var(--danger);
+}
+
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 13px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 /* ── Action Bar ─────────────────────────────────────────────────── */
 
 .action-bar {

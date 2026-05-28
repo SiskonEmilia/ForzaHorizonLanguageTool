@@ -41,6 +41,8 @@ One-click apply with automatic backup and restore.
 - **One-click restore** to undo all changes / 一键恢复所有更改
 - **Auto-set game language** in Steam — no manual switching / 自动设置 Steam 游戏语言，无需手动切换
 - **24-language UI** — the tool itself supports all game text languages / 工具界面支持全部 24 种游戏文字语言
+- **Update detection** — spots when a game update overwrites your text pack and re-applies in one click / 检测游戏更新覆盖文本包，一键重新应用
+- **Switch UI language anytime** — change the tool's interface language after first launch / 首次启动后也能随时切换工具界面语言
 
 ## Supported Games / 支持游戏
 
@@ -67,6 +69,10 @@ One-click apply with automatic backup and restore.
 This is an unofficial tool, not affiliated with Playground Games, Turn 10 Studios, Xbox, or Microsoft. It only modifies local text resource files. All changes are backed up and fully reversible. Use at your own risk.
 
 本工具为非官方工具，与 Playground Games、Turn 10 Studios、Xbox 或 Microsoft 无关。仅修改本地文字资源文件，所有更改均有备份且完全可恢复。使用风险自负。
+
+## Changelog / 更新日志
+
+See [CHANGELOG.md](CHANGELOG.md). / 见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## For Developers / 开发者
 

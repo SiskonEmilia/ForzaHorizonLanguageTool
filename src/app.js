@@ -20,6 +20,10 @@
   let currentStatus = null;
   let backups = [];
   let selectedBackup = null;
+  // Page to return to after picking a language on the full-page selector.
+  // Default keeps the first-run flow (language → disclaimer); the main-page
+  // switcher overrides it to return to the main page.
+  let langReturnPage = null;
 
   // ── Voice Language Whitelist ────────────────────────────────────
   // Only these language codes have voice audio banks (FH5 list).
@@ -39,6 +43,7 @@
   const STATUS_BADGE_CLASS = {
     applied: 'badge-success',
     reverted: 'badge-warn',
+    outdated: 'badge-warn',
     modified: 'badge-danger',
     none: 'badge-muted'
   };
@@ -72,6 +77,15 @@
 
   // Main — Status
   const statusBadge = $('#status-badge');
+
+  // Main — Language switcher
+  const btnChangeLanguage = $('#btn-change-language');
+  const btnLangLabel = btnChangeLanguage ? btnChangeLanguage.querySelector('.btn-lang-label') : null;
+
+  // Main — Outdated text pack banner
+  const outdatedBanner = $('#outdated-banner');
+  const outdatedText = $('#outdated-text');
+  const btnReapply = $('#btn-reapply');
 
   // Main — Language
   const languageSection = $('#language-section');
@@ -128,7 +142,7 @@
   // ── Loading ────────────────────────────────────────────────────
 
   function showLoading(text) {
-    loadingText.textContent = text || '处理中...';
+    loadingText.textContent = text || I18N.t('loading.processing');
     loadingOverlay.style.display = '';
   }
 
@@ -177,7 +191,7 @@
       games = detected || [];
     } catch (err) {
       games = [];
-      gameEmpty.innerHTML = '<span class="text-muted">检测失败：' + escapeHtml(extractErrorMessage(err)) + '</span>';
+      gameEmpty.innerHTML = '<span class="text-muted">' + escapeHtml(I18N.t('main.detect_error')) + escapeHtml(extractErrorMessage(err)) + '</span>';
       return;
     }
 
@@ -194,7 +208,7 @@
     existingCards.forEach((c) => c.remove());
 
     if (games.length === 0) {
-      gameEmpty.innerHTML = '<span class="text-muted">未检测到已安装的 Forza Horizon 游戏。请尝试手动添加。</span>';
+      gameEmpty.innerHTML = '<span class="text-muted">' + escapeHtml(I18N.t('main.no_games')) + '</span>';
       gameEmpty.style.display = '';
       return;
     }
@@ -234,8 +248,8 @@
     actionSection.style.display = '';
 
     // Reset dropdowns
-    selectVoice.innerHTML = '<option value="">-- 选择语音语言 --</option>';
-    selectText.innerHTML = '<option value="">-- 选择文字语言 --</option>';
+    selectVoice.innerHTML = '<option value="">' + escapeHtml(I18N.t('main.voice_placeholder')) + '</option>';
+    selectText.innerHTML = '<option value="">' + escapeHtml(I18N.t('main.text_placeholder')) + '</option>';
     effectPreview.style.display = 'none';
     btnApply.disabled = true;
 
@@ -272,8 +286,8 @@
 
   function populateLanguageDropdowns() {
     // Voice: only languages in the whitelist
-    selectVoice.innerHTML = '<option value="">-- 选择语音语言 --</option>';
-    selectText.innerHTML = '<option value="">-- 选择文字语言 --</option>';
+    selectVoice.innerHTML = '<option value="">' + escapeHtml(I18N.t('main.voice_placeholder')) + '</option>';
+    selectText.innerHTML = '<option value="">' + escapeHtml(I18N.t('main.text_placeholder')) + '</option>';
 
     languagePacks.forEach((pack) => {
       // Text dropdown: all languages
@@ -324,7 +338,7 @@
 
     if (voice.toUpperCase() === text.toUpperCase()) {
       effectPreview.style.display = '';
-      effectDesc.textContent = '语音语言和文字语言相同，无需修改。';
+      effectDesc.textContent = I18N.t('main.effect_same_lang');
       effectDesc.style.color = 'var(--warn)';
       effectDetail.textContent = '';
       btnApply.disabled = true;
@@ -349,6 +363,7 @@
     if (!currentStatus) {
       statusBadge.style.display = 'none';
       currentStatusBar.style.display = 'none';
+      if (outdatedBanner) outdatedBanner.style.display = 'none';
       return;
     }
 
@@ -360,12 +375,13 @@
     statusBadge.className = 'badge ' + badgeClass;
     statusBadge.style.display = '';
 
+    const textName = currentStatus.textLanguage
+      ? getDisplayNameForCode(currentStatus.textLanguage)
+      : '';
+
     if (state !== 'none' && currentStatus.voiceLanguage && currentStatus.textLanguage) {
       currentStatusBar.style.display = '';
-      const voicePack = languagePacks.find((p) => p.code.toUpperCase() === currentStatus.voiceLanguage.toUpperCase());
-      const textPack = languagePacks.find((p) => p.code.toUpperCase() === currentStatus.textLanguage.toUpperCase());
-      const voiceName = voicePack ? voicePack.displayName : currentStatus.voiceLanguage;
-      const textName = textPack ? textPack.displayName : currentStatus.textLanguage;
+      const voiceName = getDisplayNameForCode(currentStatus.voiceLanguage);
       statusText.textContent = I18N.t('main.status_detail', {
         status: label,
         voice: voiceName, text: textName,
@@ -373,6 +389,23 @@
       });
     } else {
       currentStatusBar.style.display = 'none';
+    }
+
+    // Offer a one-click re-apply when the on-disk voice pack no longer matches
+    // the intended combo:
+    //   outdated — our override is intact but the game updated the source pack
+    //   modified — the file was changed outside the tool (e.g. game re-download)
+    // Re-apply restores the true original then re-applies with the latest pack.
+    if (outdatedBanner) {
+      if (state === 'outdated' || state === 'modified') {
+        var noticeKey = state === 'outdated' ? 'main.outdated_notice' : 'main.modified_notice';
+        outdatedText.textContent = I18N.t(noticeKey, { text: textName });
+        btnReapply.textContent = I18N.t('main.btn_reapply');
+        outdatedBanner.classList.toggle('outdated-banner-danger', state === 'modified');
+        outdatedBanner.style.display = '';
+      } else {
+        outdatedBanner.style.display = 'none';
+      }
     }
   }
 
@@ -486,12 +519,80 @@
     }
   }
 
+  // ── Re-apply Flow (outdated text pack) ─────────────────────────
+
+  async function startReapplyFlow() {
+    if (!selectedGame || !currentStatus) return;
+
+    showLoading(I18N.t('confirm.checking'));
+
+    try {
+      const running = await invoke('check_game_running', { gameId: selectedGame.gameId });
+      if (running) {
+        hideLoading();
+        alert(I18N.t('game.running'));
+        return;
+      }
+    } catch (err) {
+      hideLoading();
+      if (!confirm(I18N.t('game.running_warn', { err: extractErrorMessage(err) }))) {
+        return;
+      }
+    }
+
+    const voiceName = getDisplayNameForCode(currentStatus.voiceLanguage);
+    const textName = getDisplayNameForCode(currentStatus.textLanguage);
+
+    showLoading(I18N.t('confirm.applying'));
+
+    try {
+      const result = await invoke('reapply_config', {
+        gameId: selectedGame.gameId,
+        resourcePath: selectedGame.resourcePath,
+        manifestPath: selectedGame.manifestPath || null
+      });
+
+      hideLoading();
+
+      if (result.success) {
+        let msg = I18N.t('result.success_msg', { voice: voiceName, text: textName });
+        if (result.steamLanguageSet) {
+          msg += I18N.t('result.steam_set', { voice: voiceName });
+        }
+        if (result.steamLanguageWarning) {
+          msg += '\n' + result.steamLanguageWarning;
+        }
+        resultSuccessMsg.textContent = msg;
+        resultSuccessDetail.textContent = result.backupPath
+          ? I18N.t('result.backup_path') + result.backupPath
+          : '';
+        showPage(pageResultSuccess);
+      } else {
+        resultErrorMsg.textContent = result.message || I18N.t('error.unknown');
+        let detail = '';
+        if (result.rolledBack) {
+          detail += I18N.t('result.error_rolled_back');
+        }
+        if (result.backupPath) {
+          detail += I18N.t('result.backup_path') + result.backupPath;
+        }
+        resultErrorDetail.textContent = detail;
+        showPage(pageResultError);
+      }
+    } catch (err) {
+      hideLoading();
+      resultErrorMsg.textContent = extractErrorMessage(err);
+      resultErrorDetail.textContent = '';
+      showPage(pageResultError);
+    }
+  }
+
   // ── Restore Flow ───────────────────────────────────────────────
 
   async function startRestoreFlow() {
     if (!selectedGame) return;
 
-    showLoading('加载备份列表...');
+    showLoading(I18N.t('restore.loading'));
     selectedBackup = null;
     restoreConfirmArea.style.display = 'none';
     btnRestoreConfirm.style.display = 'none';
@@ -503,7 +604,7 @@
     } catch (err) {
       hideLoading();
       backups = [];
-      alert('加载备份列表失败：' + extractErrorMessage(err));
+      alert(I18N.t('restore.load_error') + extractErrorMessage(err));
       return;
     }
 
@@ -515,7 +616,7 @@
     backupListEl.innerHTML = '';
 
     if (backups.length === 0) {
-      backupListEl.innerHTML = '<div class="no-backups-message">暂无备份记录。</div>';
+      backupListEl.innerHTML = '<div class="no-backups-message">' + escapeHtml(I18N.t('restore.no_backups')) + '</div>';
       return;
     }
 
@@ -535,8 +636,8 @@
         '</div>' +
         '<div class="backup-badge">' +
           (backup.valid
-            ? '<span class="badge badge-success">有效</span>'
-            : '<span class="badge badge-danger">无效</span>') +
+            ? '<span class="badge badge-success">' + escapeHtml(I18N.t('restore.valid')) + '</span>'
+            : '<span class="badge badge-danger">' + escapeHtml(I18N.t('restore.invalid')) + '</span>') +
         '</div>';
 
       if (backup.valid) {
@@ -568,7 +669,7 @@
   async function executeRestore() {
     if (!selectedBackup) return;
 
-    showLoading('正在恢复备份...');
+    showLoading(I18N.t('restore.restoring'));
 
     try {
       // Check if game is running first
@@ -576,7 +677,7 @@
         const running = await invoke('check_game_running', { gameId: selectedGame.gameId });
         if (running) {
           hideLoading();
-          alert('游戏正在运行中，请先关闭游戏后再进行恢复操作。');
+          alert(I18N.t('game.running'));
           return;
         }
       } catch (_) {
@@ -587,11 +688,11 @@
       hideLoading();
 
       if (result.success) {
-        resultSuccessMsg.textContent = '备份恢复成功！游戏资源文件已还原到原始状态。';
+        resultSuccessMsg.textContent = I18N.t('result.restore_success');
         resultSuccessDetail.textContent = result.message || '';
         showPage(pageResultSuccess);
       } else {
-        resultErrorMsg.textContent = result.message || '恢复备份时发生未知错误。';
+        resultErrorMsg.textContent = result.message || I18N.t('result.unknown_restore_error');
         resultErrorDetail.textContent = '';
         showPage(pageResultError);
       }
@@ -610,13 +711,13 @@
     const gameId = manualGameId.value;
 
     if (!path) {
-      showManualError('请输入游戏根目录路径。');
+      showManualError(I18N.t('main.manual_path_empty'));
       return;
     }
 
     manualError.style.display = 'none';
     btnValidatePath.disabled = true;
-    btnValidatePath.textContent = '验证中...';
+    btnValidatePath.textContent = I18N.t('main.validating');
 
     try {
       const profile = await invoke('validate_game_directory', { path: path, gameId: gameId });
@@ -640,7 +741,7 @@
       showManualError(extractErrorMessage(err));
     } finally {
       btnValidatePath.disabled = false;
-      btnValidatePath.textContent = '验证';
+      btnValidatePath.textContent = I18N.t('main.validate');
     }
   }
 
@@ -658,7 +759,7 @@
   }
 
   function formatDateTime(isoStr) {
-    if (!isoStr) return '未知';
+    if (!isoStr) return I18N.t('unknown');
     try {
       const date = new Date(isoStr);
       if (isNaN(date.getTime())) return isoStr;
@@ -675,7 +776,7 @@
   }
 
   function getDisplayNameForCode(code) {
-    if (!code) return '未知';
+    if (!code) return I18N.t('unknown');
     // Try to find in current language packs first
     const pack = languagePacks.find((p) => p.code.toUpperCase() === code.toUpperCase());
     if (pack) return pack.displayName;
@@ -704,7 +805,7 @@
     btnToggleManual.addEventListener('click', () => {
       const visible = manualInputArea.style.display !== 'none';
       manualInputArea.style.display = visible ? 'none' : '';
-      btnToggleManual.textContent = visible ? '+ 手动添加游戏目录' : '- 收起手动添加';
+      btnToggleManual.textContent = visible ? I18N.t('main.manual_add') : I18N.t('main.manual_hide');
     });
 
     // Manual path validation
@@ -722,6 +823,17 @@
 
     // Restore button
     btnRestore.addEventListener('click', startRestoreFlow);
+
+    // Re-apply button (outdated text pack)
+    if (btnReapply) btnReapply.addEventListener('click', startReapplyFlow);
+
+    // Change UI language from the main page (reuse full-page selector)
+    if (btnChangeLanguage) {
+      btnChangeLanguage.addEventListener('click', () => {
+        langReturnPage = pageMain;
+        showPage(pageLangSelect);
+      });
+    }
 
     // Confirm page checkboxes
     const confirmChecks = $$('.confirm-check');
@@ -795,6 +907,8 @@
     // Main page
     var gt = $('#page-main .card-title');
     if (gt) gt.textContent = t('main.select_game');
+    if (btnLangLabel) btnLangLabel.textContent = t('main.change_language');
+    if (btnReapply) btnReapply.textContent = t('main.btn_reapply');
     if (btnToggleManual) btnToggleManual.textContent = t('main.manual_add');
     var vl = $('#page-main .lang-label');
     if (vl) vl.textContent = t('main.voice_label');
@@ -827,8 +941,10 @@
     });
     $$('.confirm-check').forEach(function(cb, i) {
       var span = cb.closest('.checkbox-item').querySelector('span:last-child');
-      var keys = ['confirm.check1', 'confirm.check2'];
-      if (span && keys[i]) span.textContent = t(keys[i]);
+      var keys = ['confirm.check1', 'confirm.check2', 'confirm.check3'];
+      // innerHTML (not textContent) so the <strong> emphasis in the copy renders,
+      // matching how the disclaimer checks are applied.
+      if (span && keys[i]) span.innerHTML = t(keys[i]);
     });
     if (btnConfirmBack) btnConfirmBack.textContent = t('confirm.btn_back');
     if (btnConfirmApply) btnConfirmApply.textContent = t('confirm.btn_apply');
@@ -837,6 +953,15 @@
     if (rh) rh.textContent = t('restore.title');
     if (btnRestoreBack) btnRestoreBack.textContent = t('restore.btn_back');
     if (btnRestoreConfirm) btnRestoreConfirm.textContent = t('restore.btn_confirm');
+  }
+
+  // Re-render the dynamically-built parts of the main page after a language
+  // change (game list empty-state, dropdown placeholders, status text, banner).
+  function rerenderDynamic() {
+    renderGameList();
+    if (selectedGame) {
+      selectGame(selectedGame);
+    }
   }
 
   function initLangSelector() {
@@ -848,7 +973,15 @@
       btn.addEventListener('click', function() {
         I18N.setLang(lang.code);
         applyI18n();
-        showPage(pageDisclaimer);
+        // First-run flow goes to the disclaimer; the main-page switcher sets
+        // langReturnPage so we come back to the main page and re-render the
+        // dynamically-built strings (dropdown placeholders, status, cards).
+        var returnTo = langReturnPage || pageDisclaimer;
+        langReturnPage = null;
+        if (returnTo === pageMain) {
+          rerenderDynamic();
+        }
+        showPage(returnTo);
       });
       grid.appendChild(btn);
     });

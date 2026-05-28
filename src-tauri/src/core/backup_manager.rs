@@ -22,6 +22,12 @@ pub struct BackupManifest {
     pub original_steam_language: Option<String>,
     #[serde(default)]
     pub original_user_preferred_lang: Option<String>,
+    /// SHA-256 of the content written into the target file (i.e. the source
+    /// text pack at apply time). Lets status detection tell "our override is
+    /// still in place but the source text pack was updated" apart from a
+    /// genuinely modified file. `None` for backups created before this field.
+    #[serde(default)]
+    pub applied_sha256: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,6 +75,7 @@ pub fn create_backup_to(
     acf_manifest_path: Option<&Path>,
     original_steam_language: Option<&str>,
     original_user_preferred_lang: Option<&str>,
+    applied_sha256: Option<&str>,
 ) -> Result<PathBuf, String> {
     let now = chrono::Local::now();
     let dir_name = format!(
@@ -106,7 +113,7 @@ pub fn create_backup_to(
     }
 
     let manifest = BackupManifest {
-        tool_version: "1.0.0".to_string(),
+        tool_version: "1.2.0".to_string(),
         game: game_id.to_string(),
         channel: channel.to_string(),
         game_root: game_root.to_string_lossy().to_string(),
@@ -123,6 +130,7 @@ pub fn create_backup_to(
         manifest_path: acf_manifest_path.map(|p| p.to_string_lossy().to_string()),
         original_steam_language: original_steam_language.map(|s| s.to_string()),
         original_user_preferred_lang: original_user_preferred_lang.map(|s| s.to_string()),
+        applied_sha256: applied_sha256.map(|s| s.to_string()),
     };
 
     let manifest_json = serde_json::to_string_pretty(&manifest)
@@ -254,6 +262,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         );
 
         let backup_dir = result.expect("create_backup_to should succeed");
@@ -263,7 +272,7 @@ mod tests {
         assert!(manifest_path.exists(), "manifest.json should exist");
 
         let manifest = read_manifest(&backup_dir).expect("manifest should be readable");
-        assert_eq!(manifest.tool_version, "1.0.0");
+        assert_eq!(manifest.tool_version, "1.2.0");
         assert_eq!(manifest.game, "fh5");
         assert_eq!(manifest.channel, "steam");
         assert_eq!(manifest.voice_language, "en-US");
@@ -313,6 +322,7 @@ mod tests {
             manifest_path: None,
             original_steam_language: None,
             original_user_preferred_lang: None,
+            applied_sha256: None,
         };
 
         let json = serde_json::to_string_pretty(&manifest).unwrap();

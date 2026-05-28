@@ -222,6 +222,7 @@ mod tests {
             manifest_path: None,
             original_steam_language: None,
             original_user_preferred_lang: None,
+            applied_sha256: None,
             files: vec![BackupFileEntry {
                 path: "EN.zip".into(),
                 original_sha256: original_hash,

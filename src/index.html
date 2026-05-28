@@ -102,7 +102,13 @@
         <div class="card">
           <div class="card-header-row">
             <h2 class="card-title">选择游戏</h2>
-            <div id="status-badge" class="badge badge-muted" style="display:none;"></div>
+            <div class="header-right">
+              <div id="status-badge" class="badge badge-muted" style="display:none;"></div>
+              <button id="btn-change-language" class="btn-link btn-lang" type="button">
+                <span class="lang-globe" aria-hidden="true">🌐</span>
+                <span class="btn-lang-label"></span>
+              </button>
+            </div>
           </div>
 
           <div id="game-list" class="game-list">
@@ -175,6 +181,18 @@
               <span id="status-text" class="text-secondary"></span>
             </div>
           </div>
+
+          <!-- Outdated text pack notice -->
+          <div id="outdated-banner" class="outdated-banner" style="display:none;">
+            <div class="outdated-banner-body">
+              <svg class="icon-warn" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span id="outdated-text"></span>
+            </div>
+            <button id="btn-reapply" class="btn btn-primary btn-sm" type="button"></button>
+          </div>
         </div>
 
         <!-- Action Buttons -->
@@ -196,7 +214,7 @@
       </div>
 
       <footer class="app-footer">
-        FH Language Combo Tool v1.0.0 · 仅供学习研究 · 非官方工具
+        FH Language Combo Tool v1.2.0 · 仅供学习研究 · 非官方工具
       </footer>
     </div>
 

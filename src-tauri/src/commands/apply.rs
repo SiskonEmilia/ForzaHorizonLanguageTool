@@ -1,6 +1,8 @@
 use crate::core::apply_engine::{self, ApplyResult};
+use crate::core::backup_manager;
 use crate::core::game_detector::{GameId, GameProfile};
 use crate::core::language_mapper;
+use crate::core::restore_engine;
 
 #[tauri::command]
 pub fn apply_config(
@@ -61,4 +63,47 @@ pub fn apply_config(
         manifest_p,
     )?;
     Ok(apply_engine::execute_apply(&plan, &profile))
+}
+
+/// Re-apply the most recent configuration using the latest source text pack.
+///
+/// Used when status detection reports `outdated`: the game updated the source
+/// text pack while our override still holds the old content. We first restore
+/// the latest backup (writing the *true original* voice pack back to disk and
+/// reverting Steam language), then re-run a normal apply with the same
+/// voice/text languages. The fresh apply backs up the true original again and
+/// overwrites with the now-updated source pack, so the new backup's recorded
+/// original stays correct and restore keeps working.
+#[tauri::command]
+pub fn reapply_config(
+    game_id: String,
+    resource_path: String,
+    manifest_path: Option<String>,
+) -> Result<ApplyResult, String> {
+    let backups = backup_manager::list_backups(&game_id)?;
+    let latest = backups
+        .first()
+        .ok_or_else(|| "No backup found to re-apply".to_string())?;
+
+    let manifest = backup_manager::read_manifest(&latest.path)?;
+
+    let restore = restore_engine::execute_restore(&latest.path);
+    if !restore.success {
+        return Ok(ApplyResult {
+            success: false,
+            message: format!("Failed to restore before re-apply: {}", restore.message),
+            backup_path: None,
+            rolled_back: false,
+            steam_language_set: false,
+            steam_language_warning: None,
+        });
+    }
+
+    apply_config(
+        game_id,
+        manifest.voice_language,
+        manifest.text_language,
+        resource_path,
+        manifest_path,
+    )
 }
